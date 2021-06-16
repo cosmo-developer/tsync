@@ -1,19 +1,19 @@
 from tsync.tsync import TSync,Pipeline
 
 @TSync.bind(name='alice',flow=['bob','minister'])
-def alice(pipe:Pipeline):
+def alice(pipe):
     half_word=pipe.read(_from='minister').decode()
     half_word+=" John"
     pipe.write(_to='minister', data=half_word.encode())
 
 @TSync.bind(name='bob',flow=['alice','minister'])
-def bob(pipe:Pipeline):
+def bob(pipe):
     half_word=pipe.read(_from='minister').decode()
     half_word+=" Doe"
     pipe.write(_to='minister',data=half_word.encode())
 
 @TSync.bind(name='minister',flow=['bob','alice'])
-def minister(pipe:Pipeline):
+def minister(pipe):
     pipe.write(_to='alice',data=b'Aesop')
     pipe.write(_to='bob',data=b'was')
     print("From Alice:",pipe.read(_from='alice'))
