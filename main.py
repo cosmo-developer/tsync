@@ -1,4 +1,4 @@
-from tsync import TSync,Pipeline
+from tsync.tsync import TSync,Pipeline
 
 @TSync.bind(name='alice',flow=['bob','minister'])
 def alice(pipe:Pipeline):
