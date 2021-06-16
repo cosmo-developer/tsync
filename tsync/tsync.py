@@ -1,65 +1,61 @@
 from threading import Thread
 
 class Pipeline:
-    def __init__(self,name):
+    def __init__(self,name,syncer):
         self.__name=name
+        self.__tsync:TSync=syncer
     def write(self,_to,data=b''):
-        TSync.write(self.__name,_to,data)
+        self.__tsync.write(self.__name,_to,data)
     def read(self,_from):
-        return TSync.read(self.__name,_from)
+        return self.__tsync.read(self.__name,_from)
 class Buffer:
     def __init__(self):
         self.data=b''
         self.w_lock=False #Write lock
         self.r_lock=True # Read lock
+    def __repr__(self):
+        return str((self.data,self.r_lock,self.w_lock))
 
 class TSync:
-    _thread_functions={}
-    _data_flow_pumps={}
-    _thread_list=[]
-    @staticmethod
-    def bind(name,flow:list):
+    def __init__(self):
+        self._thread_functions = {}
+        self._data_flow_pumps = {}
+        self._thread_list = []
+
+    def bind(self,name,flow:list):
         def internal_bind(z):
-            TSync._thread_functions.update({name:z})
+            self._thread_functions.update({name:z})
             for flow_dir in flow:
-                TSync._data_flow_pumps.update({'->'.join([name,flow_dir]):Buffer()})
+                self._data_flow_pumps.update({'->'.join([name,flow_dir]):Buffer()})
         return internal_bind
-    @staticmethod
-    def get_all_functions():
-        return TSync._thread_functions
-    @staticmethod
-    def prepare_thread(name,args=[]):
+    def get_all_functions(self):
+        return self._thread_functions
+    def prepare_thread(self,name,args=[]):
         args.reverse()
-        args.append(Pipeline(name))
+        args.append(Pipeline(name,self))
         args.reverse()
-        t:Thread=Thread(target=TSync._thread_functions[name],args=tuple(args))
-        TSync._thread_list.append(t)
-    @staticmethod
-    def fire_threads():
-        for t in TSync._thread_list:
+        t:Thread=Thread(target=self._thread_functions[name],args=tuple(args))
+        self._thread_list.append(t)
+    def fire_threads(self):
+        for t in self._thread_list:
             t.start()
-    @staticmethod
-    def join_threads():
-        for t in TSync._thread_list:
+    def join_threads(self):
+        for t in self._thread_list:
             t.join()
-    @staticmethod
-    def get_pumps():
-        return TSync._data_flow_pumps
-    @staticmethod
-    def read(name:str,other:str):
-        while TSync._data_flow_pumps['->'.join([other,name])].r_lock:
+    def get_pumps(self):
+        return self._data_flow_pumps
+    def read(self,name:str,other:str):
+        while self._data_flow_pumps['->'.join([other,name])].r_lock:
             pass
-        TSync._data_flow_pumps['->'.join([other,name])].r_lock=True
-        TSync._data_flow_pumps['->'.join([other,name])].w_lock=False
-        return TSync._data_flow_pumps['->'.join([other,name])].data
-    @staticmethod
-    def write(name:str,other:str,data=b''):
-        while TSync._data_flow_pumps['->'.join([name,other])].w_lock:
+        self._data_flow_pumps['->'.join([other,name])].r_lock=True
+        self._data_flow_pumps['->'.join([other,name])].w_lock=False
+        return self._data_flow_pumps['->'.join([other,name])].data
+    def write(self,name:str,other:str,data=b''):
+        while self._data_flow_pumps['->'.join([name,other])].w_lock:
             pass
-        TSync._data_flow_pumps['->'.join([name,other])].r_lock = False
-        TSync._data_flow_pumps['->'.join([name,other])].w_lock = True
-        TSync._data_flow_pumps['->'.join([name,other])].data=data
-    @staticmethod
-    def prepare_thread_default():
-        for name in TSync._thread_functions:
-            TSync.prepare_thread(name,[])
+        self._data_flow_pumps['->'.join([name,other])].r_lock = False
+        self._data_flow_pumps['->'.join([name,other])].w_lock = True
+        self._data_flow_pumps['->'.join([name,other])].data=data
+    def prepare_thread_default(self):
+        for name in self._thread_functions:
+            self.prepare_thread(name,[])

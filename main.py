@@ -1,26 +1,24 @@
 from tsync.tsync import TSync,Pipeline
+sync=TSync()
+'''A chat between two threads alice and bob'''
+@sync.bind(name='alice',flow=['bob'])
+def alice(pipe:Pipeline):
+    pipe.write('bob',b'Hello How are you?')
+    print("From bob:",pipe.read('bob').decode())
+    pipe.write('bob',b'I am also fine!')
+    print("From bob:",pipe.read('bob').decode())
+    pipe.write('bob',b'Good Bye')
 
-@TSync.bind(name='alice',flow=['bob','minister'])
-def alice(pipe):
-    half_word=pipe.read(_from='minister').decode()
-    half_word+=" John"
-    pipe.write(_to='minister', data=half_word.encode())
+@sync.bind(name='bob',flow=['alice'])
+def bob(pipe:Pipeline):
+    print("From Alice:",pipe.read('alice').decode())
+    pipe.write('alice',b'I am fine! and You?')
+    print("From Alice:",pipe.read('alice').decode())
+    pipe.write('alice',b'Good Bye')
+    print("From Alice:",pipe.read('alice').decode())
 
-@TSync.bind(name='bob',flow=['alice','minister'])
-def bob(pipe):
-    half_word=pipe.read(_from='minister').decode()
-    half_word+=" Doe"
-    pipe.write(_to='minister',data=half_word.encode())
 
-@TSync.bind(name='minister',flow=['bob','alice'])
-def minister(pipe):
-    pipe.write(_to='alice',data=b'Aesop')
-    pipe.write(_to='bob',data=b'was')
-    print("From Alice:",pipe.read(_from='alice'))
-    print("From Bob:",pipe.read(_from='bob'))
-
-TSync.prepare_thread_default()
-TSync.fire_threads()
-TSync.join_threads()
-
-print(TSync.get_pumps())
+sync.prepare_thread_default()
+sync.fire_threads()
+sync.join_threads()
+print(sync.get_pumps())
