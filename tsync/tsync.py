@@ -56,6 +56,7 @@ class TSync:
         self._data_flow_pumps['->'.join([name,other])].r_lock = False
         self._data_flow_pumps['->'.join([name,other])].w_lock = True
         self._data_flow_pumps['->'.join([name,other])].data=data
-    def prepare_thread_default(self):
+    def prepare_thread_default(self,excepts=[]):
         for name in self._thread_functions:
-            self.prepare_thread(name,[])
+            if name not in excepts:
+                self.prepare_thread(name,[])
