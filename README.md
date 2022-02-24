@@ -52,6 +52,3 @@ sync.join_threads()
 print(sync.get_pumps())
 ```
 
-
-## 🚀 About Me
-I'm a Software Developer devloping open source software on Github.
